@@ -1,4 +1,5 @@
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -6,6 +7,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.permissions import IsAuthenticated, SAFE_METHODS, AllowAny
+from rest_framework.response import Response
 
 from .serializers import *
 
@@ -73,3 +75,27 @@ class BookListCreateAPIView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(account=self.request.user)
+
+
+class BookRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Book.objects.all()
+
+    def get_serializer_class(self):
+        if self.request.method in SAFE_METHODS:
+            return BookSerializer
+        return BookPostSerializer
+
+    def get_permissions(self):
+        if self.request.method in SAFE_METHODS:
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    def perform_update(self, serializer):
+        if serializer.instance.acoount != self.request.user:
+            raise PermissionDenied(detail='You are not the owner of this book')
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        if instance.account != self.request.user:
+            raise PermissionDenied(detail='You are not the owner of this book')
+        instance.delete()

@@ -29,6 +29,7 @@ urlpatterns = [
 
 urlpatterns += [
     path('books/', BookListCreateAPIView.as_view()),
+    path('books/<int:pk>/', BookRetrieveUpdateDestroyAPIView.as_view()),
 ]
 
 urlpatterns += [
