@@ -31,6 +31,14 @@ class Image(models.Model):
     def __str__(self):
         return self.book.title
 
+
+class Wishlist(models.Model):
+    account = models.OneToOneField(Account, on_delete=models.CASCADE)
+    books = models.ManyToManyField(Book)
+
+    def __str__(self):
+        return self.account.username
+
     # def delete(self, *args, **kwargs):
     #     if self.image and os.path.isfile(self.image.path):
     #         os.remove(self.image.path)

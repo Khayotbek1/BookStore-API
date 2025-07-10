@@ -41,3 +41,5 @@ class BookMarkSoldSerializer(ModelSerializer):
         extra_kwargs = {
             'sold': {'read_only': True}
         }
+
+

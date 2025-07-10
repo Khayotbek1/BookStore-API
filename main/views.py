@@ -24,6 +24,10 @@ class RegisterAPIView(generics.CreateAPIView):
     queryset = Account.objects.all()
     serializer_class = AccountSerializer
 
+    def perform_create(self, serializer):
+        serializer.save()
+        Wishlist.objects.create(account=serializer.instance)
+
 
 class AccountRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
@@ -137,9 +141,10 @@ class MyBooksList(generics.ListAPIView):
 
 
 class BookMarkSoldAPIView(APIView):
+    permission_classes = [IsAuthenticated]
     def patch(self, request, pk):
-        book = get_object_or_404(Book, pk)
-        serializer = BookSerializer(book, data=request.data)
+        book = get_object_or_404(Book, pk=pk, account=request.user)
+        serializer = BookMarkSoldSerializer(book, data=request.data)
         if serializer.is_valid():
             serializer.save(sold=True)
             response = {
@@ -150,3 +155,36 @@ class BookMarkSoldAPIView(APIView):
             return Response(response, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class MyWishListAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = BookSerializer
+    pagination_class = BooksPagination
+
+    def get_queryset(self):
+        wishlist = Wishlist.objects.get(account=self.request.user)
+        return wishlist.books.order_by('-created')
+
+
+class MyWishListAddBookAPIView(APIView):
+    def post(self, request, pk):
+        book = get_object_or_404(Book, pk=pk)
+        wishlist = Wishlist.objects.get(account=request.user)
+        wishlist.books.add(book)
+        wishlist.save()
+        response = {
+            "success": True,
+            "message": "Book marked added.",
+        }
+        return Response(response, status=status.HTTP_201_CREATED)
+
+class MyWishListRemoveBookAPIView(APIView):
+    def delete(self, request, pk):
+        book = get_object_or_404(Book, pk=pk)
+        wishlist = Wishlist.objects.get(account=request.user)
+        wishlist.books.remove(book)
+        wishlist.save()
+        response = {
+            "success": True,
+            "message": "Book marked removed.",
+        }
+        return Response(response, status=status.HTTP_204_NO_CONTENT)

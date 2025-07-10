@@ -26,6 +26,9 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('accounts/register/', RegisterAPIView.as_view()),
     path('accounts/me/', AccountRetrieveUpdateDestroyAPIView.as_view()),
+    path('accounts/wishlist/', MyWishListAPIView.as_view()),
+    path('accounts/wishlist/add-book/<int:pk>/', MyWishListAddBookAPIView.as_view()),
+    path('accounts/wishlist/remove-book/<int:pk>/', MyWishListRemoveBookAPIView.as_view()),
 ]
 
 urlpatterns += [
