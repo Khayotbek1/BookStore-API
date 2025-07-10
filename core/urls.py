@@ -22,6 +22,7 @@ schema_view = get_schema_view(
     permission_classes=(permissions.AllowAny,),
 )
 
+
 urlpatterns = [
     path('accounts/register/', RegisterAPIView.as_view()),
     path('accounts/me/', AccountRetrieveUpdateDestroyAPIView.as_view()),
@@ -30,7 +31,10 @@ urlpatterns = [
 urlpatterns += [
     path('books/', BookListCreateAPIView.as_view()),
     path('books/<int:pk>/', BookRetrieveUpdateDestroyAPIView.as_view()),
+    path('books/<int:pk>/mark-sold/', BookMarkSoldAPIView.as_view()),
+    path('books/mine/', MyBooksList.as_view()),
 ]
+
 
 urlpatterns += [
     path('admin/', admin.site.urls),

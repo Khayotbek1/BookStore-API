@@ -32,3 +32,12 @@ class BookPostSerializer(ModelSerializer):
         extra_kwargs = {
             'account': {'read_only': True}
         }
+
+
+class BookMarkSoldSerializer(ModelSerializer):
+    class Meta:
+        model = Book
+        fields = ('id', 'sold')
+        extra_kwargs = {
+            'sold': {'read_only': True}
+        }
