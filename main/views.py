@@ -37,7 +37,20 @@ class AccountRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView)
         return self.request.user
 
 
-class BookListCreateAPIView(generics.ListCreateAPIView):
+# DRY Mixin for permission and serializer logic
+class SafeMethodPermissionAndSerializerMixin:
+    def get_permissions(self):
+        if self.request.method in SAFE_METHODS:
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    def get_serializer_class(self):
+        if self.request.method in SAFE_METHODS:
+            return BookSerializer
+        return BookPostSerializer
+
+
+class BookListCreateAPIView(SafeMethodPermissionAndSerializerMixin, generics.ListCreateAPIView):
     queryset = Book.objects.all()
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['cover', 'account', 'sold']
@@ -70,35 +83,16 @@ class BookListCreateAPIView(generics.ListCreateAPIView):
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
-    def get_serializer_class(self):
-        if self.request.method in SAFE_METHODS:
-            return BookSerializer
-        return BookPostSerializer
-
-    def get_permissions(self):
-        if self.request.method in SAFE_METHODS:
-            return [AllowAny()]
-        return [IsAuthenticated()]
-
     def perform_create(self, serializer):
         serializer.save(account=self.request.user)
 
 
-class BookRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+class BookRetrieveUpdateDestroyAPIView(SafeMethodPermissionAndSerializerMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = Book.objects.all()
 
-    def get_serializer_class(self):
-        if self.request.method in SAFE_METHODS:
-            return BookSerializer
-        return BookPostSerializer
-
-    def get_permissions(self):
-        if self.request.method in SAFE_METHODS:
-            return [AllowAny()]
-        return [IsAuthenticated()]
-
     def perform_update(self, serializer):
-        if serializer.instance.acoount != self.request.user:
+        # Fixed typo: 'acoount' -> 'account'
+        if serializer.instance.account != self.request.user:
             raise PermissionDenied(detail='You are not the owner of this book')
         serializer.save()
 
@@ -161,16 +155,16 @@ class MyWishListAPIView(generics.ListAPIView):
     pagination_class = BooksPagination
 
     def get_queryset(self):
-        wishlist = Wishlist.objects.get(account=self.request.user)
+        wishlist, _ = Wishlist.objects.get_or_create(account=self.request.user)
         return wishlist.books.order_by('-created')
 
 
 class MyWishListAddBookAPIView(APIView):
     def post(self, request, pk):
         book = get_object_or_404(Book, pk=pk)
-        wishlist = Wishlist.objects.get(account=request.user)
+        wishlist, _ = Wishlist.objects.get_or_create(account=request.user)
         wishlist.books.add(book)
-        wishlist.save()
+        # wishlist.save() unnecessary
         response = {
             "success": True,
             "message": "Book marked added.",
@@ -180,9 +174,9 @@ class MyWishListAddBookAPIView(APIView):
 class MyWishListRemoveBookAPIView(APIView):
     def delete(self, request, pk):
         book = get_object_or_404(Book, pk=pk)
-        wishlist = Wishlist.objects.get(account=request.user)
+        wishlist, _ = Wishlist.objects.get_or_create(account=request.user)
         wishlist.books.remove(book)
-        wishlist.save()
+        # wishlist.save() unnecessary
         response = {
             "success": True,
             "message": "Book marked removed.",
