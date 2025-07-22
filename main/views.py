@@ -143,7 +143,7 @@ class BookMarkSoldAPIView(APIView):
             serializer.save(sold=True)
             response = {
                 "success": True,
-                "message": "Book marked sold.",
+                "message": "Book marked sold!.",
                 "data": BookSerializer(book).data
             }
             return Response(response, status=status.HTTP_200_OK)
